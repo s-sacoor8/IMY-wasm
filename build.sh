@@ -2,21 +2,17 @@
 
 echo "Building RGB to HSL Color Converter with Rust + WebAssembly..."
 
-# Clean previous builds
 echo "Cleaning previous builds..."
 rm -rf pkg/
 rm -f web/*.wasm
 rm -f web/IMY_wasm.js
 
-# Build with wasm-pack
 echo "Building Rust code to WebAssembly..."
 wasm-pack build --target web --out-dir pkg --release
 
-# Check if build was successful
 if [ $? -eq 0 ]; then
     echo "Build successful!"
     
-    # Copy only the necessary files to web directory (not the entire pkg folder)
     echo "Copying files to web directory..."
     cp pkg/*.wasm web/
     cp pkg/*.js web/

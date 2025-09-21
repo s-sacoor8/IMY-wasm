@@ -1,13 +1,9 @@
-// Import the WebAssembly module
 import init, { Rgb, Hsl } from './IMY_wasm.js';
-// Wait for the WASM module to load
 async function run() {
     try {
-        // Initialize the WebAssembly module
         await init();
         console.log("WebAssembly module loaded successfully!");
 
-        // Get DOM elements
         const rSlider = document.getElementById('r');
         const gSlider = document.getElementById('g');
         const bSlider = document.getElementById('b');
@@ -29,57 +25,72 @@ async function run() {
         const colorHex = document.getElementById('color-hex');
         const rgbResult = document.getElementById('rgb-result');
         const hslResult = document.getElementById('hsl-result');
+        let lastMovedSliders = 'rgb';
 
-        // Sync slider and number inputs for RGB
         [rSlider, gSlider, bSlider].forEach((slider, index) => {
             const valueInput = [rValue, gValue, bValue][index];
             slider.addEventListener('input', () => {
+                lastMovedSliders = 'rgb';
                 valueInput.value = slider.value;
                 updateColorPreview();
             });
             
             valueInput.addEventListener('input', () => {
+                lastMovedSliders = 'rgb';
                 slider.value = valueInput.value;
                 updateColorPreview();
             });
         });
 
-        // Sync slider and number inputs for HSL
         [hSlider, sSlider, lSlider].forEach((slider, index) => {
             const valueInput = [hValue, sValue, lValue][index];
             slider.addEventListener('input', () => {
+                lastMovedSliders = 'hsl';
                 valueInput.value = slider.value;
+                updateColorPreview();
             });
             
             valueInput.addEventListener('input', () => {
+                lastMovedSliders = 'hsl';
                 slider.value = valueInput.value;
+                updateColorPreview();
             });
         });
 
-        // Update color preview based on RGB values
         function updateColorPreview() {
-            const r = parseInt(rSlider.value);
-            const g = parseInt(gSlider.value);
-            const b = parseInt(bSlider.value);
-            
-            const hexColor = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-            colorBox.style.backgroundColor = hexColor;
-            colorHex.textContent = hexColor;
-        }
+    let r, g, b;
+    
+    if (lastMovedSliders === 'rgb') {
+        r = parseInt(rSlider.value);
+        g = parseInt(gSlider.value);
+        b = parseInt(bSlider.value);
+    } else {
+        const h = parseFloat(hSlider.value);
+        const s = parseFloat(sSlider.value);
+        const l = parseFloat(lSlider.value);
+        
+        const hsl = new Hsl(h, s, l);
+        const rgbFromHsl = hsl.to_rgb();
+        
+        r = rgbFromHsl.r;
+        g = rgbFromHsl.g;
+        b = rgbFromHsl.b;
+    }
+    
+    const hexColor = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+    colorBox.style.backgroundColor = hexColor;
+    colorHex.textContent = hexColor.toUpperCase();
+}
 
-        // Convert RGB to HSL using WASM
         convertToHslBtn.addEventListener('click', () => {
             const r = parseInt(rSlider.value);
             const g = parseInt(gSlider.value);
             const b = parseInt(bSlider.value);
             
-            // Create RGB object using WASM
             const rgb = new Rgb(r, g, b);
             
-            // Convert to HSL
             const hsl = rgb.to_hsl();
             
-            // Update HSL inputs and display results
             hSlider.value = hsl.h;
             hValue.value = hsl.h;
             sSlider.value = hsl.s;
@@ -91,19 +102,15 @@ async function run() {
             rgbResult.textContent = `RGB: ${r}, ${g}, ${b}`;
         });
 
-        // Convert HSL to RGB using WASM
         convertToRgbBtn.addEventListener('click', () => {
             const h = parseFloat(hSlider.value);
             const s = parseFloat(sSlider.value);
             const l = parseFloat(lSlider.value);
             
-            // Create HSL object using WASM
             const hsl = new Hsl(h, s, l);
-            
-            // Convert to RGB
             const rgb = hsl.to_rgb();
             
-            // Update RGB inputs and display results
+            lastMovedSliders = 'rgb';
             rSlider.value = rgb.r;
             rValue.value = rgb.r;
             gSlider.value = rgb.g;
@@ -116,7 +123,6 @@ async function run() {
             hslResult.textContent = `HSL: ${h}°, ${s}%, ${l}%`;
         });
 
-        // Initialize the color preview
         updateColorPreview();
         
     } catch (error) {
@@ -125,5 +131,4 @@ async function run() {
     }
 }
 
-// Run the application
 run();
