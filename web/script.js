@@ -1,4 +1,5 @@
 import init, { Rgb, Hsl } from './IMY_wasm.js';
+
 async function run() {
     try {
         await init();
@@ -18,91 +19,75 @@ async function run() {
         const sValue = document.getElementById('s-value');
         const lValue = document.getElementById('l-value');
         
-        const convertToHslBtn = document.getElementById('convert-to-hsl');
-        const convertToRgbBtn = document.getElementById('convert-to-rgb');
-        
         const colorBox = document.getElementById('color-box');
         const colorHex = document.getElementById('color-hex');
         const rgbResult = document.getElementById('rgb-result');
         const hslResult = document.getElementById('hsl-result');
-        let lastMovedSliders = 'rgb';
+
+        let isUpdating = false;
 
         [rSlider, gSlider, bSlider].forEach((slider, index) => {
             const valueInput = [rValue, gValue, bValue][index];
+            
             slider.addEventListener('input', () => {
-                lastMovedSliders = 'rgb';
+                if (isUpdating) return;
                 valueInput.value = slider.value;
-                updateColorPreview();
+                updateFromRGB();
             });
             
             valueInput.addEventListener('input', () => {
-                lastMovedSliders = 'rgb';
+                if (isUpdating) return;
                 slider.value = valueInput.value;
-                updateColorPreview();
+                updateFromRGB();
             });
         });
 
         [hSlider, sSlider, lSlider].forEach((slider, index) => {
             const valueInput = [hValue, sValue, lValue][index];
+            
             slider.addEventListener('input', () => {
-                lastMovedSliders = 'hsl';
+                if (isUpdating) return;
                 valueInput.value = slider.value;
-                updateColorPreview();
+                updateFromHSL();
             });
             
             valueInput.addEventListener('input', () => {
-                lastMovedSliders = 'hsl';
+                if (isUpdating) return;
                 slider.value = valueInput.value;
-                updateColorPreview();
+                updateFromHSL();
             });
         });
 
-        function updateColorPreview() {
-    let r, g, b;
-    
-    if (lastMovedSliders === 'rgb') {
-        r = parseInt(rSlider.value);
-        g = parseInt(gSlider.value);
-        b = parseInt(bSlider.value);
-    } else {
-        const h = parseFloat(hSlider.value);
-        const s = parseFloat(sSlider.value);
-        const l = parseFloat(lSlider.value);
-        
-        const hsl = new Hsl(h, s, l);
-        const rgbFromHsl = hsl.to_rgb();
-        
-        r = rgbFromHsl.r;
-        g = rgbFromHsl.g;
-        b = rgbFromHsl.b;
-    }
-    
-    const hexColor = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-    colorBox.style.backgroundColor = hexColor;
-    colorHex.textContent = hexColor.toUpperCase();
-}
-
-        convertToHslBtn.addEventListener('click', () => {
+        function updateFromRGB() {
+            isUpdating = true;
+            
             const r = parseInt(rSlider.value);
             const g = parseInt(gSlider.value);
             const b = parseInt(bSlider.value);
             
-            const rgb = new Rgb(r, g, b);
+            const hexColor = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+            colorBox.style.backgroundColor = hexColor;
+            colorHex.textContent = hexColor.toUpperCase();
             
+            const rgb = new Rgb(r, g, b);
             const hsl = rgb.to_hsl();
             
-            hSlider.value = hsl.h;
-            hValue.value = hsl.h;
-            sSlider.value = hsl.s;
-            sValue.value = hsl.s;
-            lSlider.value = hsl.l;
-            lValue.value = hsl.l;
+            hSlider.value = Math.round(hsl.h);
+            hValue.value = Math.round(hsl.h);
+            sSlider.value = Math.round(hsl.s);
+            sValue.value = Math.round(hsl.s);
+            lSlider.value = Math.round(hsl.l);
+            lValue.value = Math.round(hsl.l);
             
-            hslResult.textContent = `HSL: ${hsl.h}°, ${hsl.s}%, ${hsl.l}%`;
             rgbResult.textContent = `RGB: ${r}, ${g}, ${b}`;
-        });
+            hslResult.textContent = `HSL: ${Math.round(hsl.h)}°, ${Math.round(hsl.s)}%, ${Math.round(hsl.l)}%`;
+            
+            isUpdating = false;
+        }
 
-        convertToRgbBtn.addEventListener('click', () => {
+        function updateFromHSL() {
+            isUpdating = true;
+            
             const h = parseFloat(hSlider.value);
             const s = parseFloat(sSlider.value);
             const l = parseFloat(lSlider.value);
@@ -110,7 +95,6 @@ async function run() {
             const hsl = new Hsl(h, s, l);
             const rgb = hsl.to_rgb();
             
-            lastMovedSliders = 'rgb';
             rSlider.value = rgb.r;
             rValue.value = rgb.r;
             gSlider.value = rgb.g;
@@ -118,12 +102,17 @@ async function run() {
             bSlider.value = rgb.b;
             bValue.value = rgb.b;
             
-            updateColorPreview();
+            const hexColor = `#${rgb.r.toString(16).padStart(2, '0')}${rgb.g.toString(16).padStart(2, '0')}${rgb.b.toString(16).padStart(2, '0')}`;
+            colorBox.style.backgroundColor = hexColor;
+            colorHex.textContent = hexColor.toUpperCase();
+            
             rgbResult.textContent = `RGB: ${rgb.r}, ${rgb.g}, ${rgb.b}`;
-            hslResult.textContent = `HSL: ${h}°, ${s}%, ${l}%`;
-        });
+            hslResult.textContent = `HSL: ${Math.round(h)}°, ${Math.round(s)}%, ${Math.round(l)}%`;
+            
+            isUpdating = false;
+        }
 
-        updateColorPreview();
+        updateFromRGB();
         
     } catch (error) {
         console.error("Error loading WebAssembly module:", error);
